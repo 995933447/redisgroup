@@ -36,7 +36,7 @@ func NewNode(host string, port int, password string) *Node {
 	n := new(Node)
 	n.host = host
 	n.port = port
-	n.hash = hashKey(fmt.Sprintf("%s:%d", host, port))
+	n.hash = hashAddress(host, port)
 	n.client = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", host, port),
 		Password: password,
