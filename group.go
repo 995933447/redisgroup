@@ -91,6 +91,11 @@ func (g *Group) FindNodeForAddress(host string, port int) *Node {
 	return g.findNodeByHash(hashAddress(host, port))
 }
 
+func (g *Group) AddNode(node *Node) {
+	g.nodes = append(g.nodes, node)
+	g.sortNodes()
+}
+
 func (g *Group) findNodeByHash(hash uint32) *Node {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
