@@ -22,6 +22,8 @@ type Node struct {
 	hash   uint32
 }
 
+var notFoundNodeErr = errors.New("not found available redis node")
+
 func hashKey(s string) uint32 {
 	f := fnv.New32a()
 	_, _ = f.Write([]byte(s))
@@ -120,7 +122,7 @@ func (g *Group) GetClient(node *Node) *redis.Client {
 func (g *Group) Set(ctx context.Context, key string, val []byte, exp time.Duration) error {
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
 	g.logger.Infof(ctx, "redis: Set: key %s exp %v", key, exp)
 	err := node.client.Set(ctx, key, val, exp).Err()
@@ -135,7 +137,7 @@ func (g *Group) Set(ctx context.Context, key string, val []byte, exp time.Durati
 func (g *Group) SetUint64(ctx context.Context, key string, val uint64, exp time.Duration) error {
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
 	g.logger.Infof(ctx, "redis: Set: key %s exp %v", key, exp)
 	err := node.client.Set(ctx, key, val, exp).Err()
@@ -148,11 +150,11 @@ func (g *Group) SetUint64(ctx context.Context, key string, val uint64, exp time.
 }
 
 func (g *Group) SetRange(ctx context.Context, key string, offset int64, value string) error {
-	g.logger.Infof(ctx, "redis: SetRange: key %s offset", key, offset)
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
+	g.logger.Infof(ctx, "redis: SetRange: key %s offset", key, offset)
 	err := node.client.SetRange(ctx, key, offset, value).Err()
 	if err != nil {
 		g.logger.Errorf(ctx, "err:%s", err)
@@ -202,7 +204,7 @@ func (g *Group) HSetByJson(ctx context.Context, key, subKey string, j interface{
 	}
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
 	g.logger.Infof(ctx,  "redis: HSetJson: key %s subKey %+v", key, subKey)
 	err = node.client.HSet(ctx, key, subKey, string(val)).Err()
@@ -228,7 +230,7 @@ func (g *Group) HSetNXByJson(ctx context.Context, key, subKey string, j interfac
 	}
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
 	g.logger.Infof(ctx, "redis: HSetJsonNX: key %s subKey %+v exp %v", key, subKey, exp)
 	res := node.client.HSetNX(ctx, key, subKey, string(val))
@@ -380,7 +382,7 @@ func (g *Group) ZScan(ctx context.Context, key string, cursor uint64, match stri
 func (g *Group) HMGetJson(ctx context.Context, key, subKey string, j interface{}) error {
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
 	g.logger.Infof(ctx, "redis: HMGetJson: key %s subKey %+v", key, subKey)
 	values, err := node.client.HMGet(ctx, key, subKey).Result()
@@ -429,7 +431,7 @@ func (g *Group) HDel(ctx context.Context, key string, subKey ...string) (int64, 
 func (g *Group) Del(ctx context.Context, key string) error {
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
 	g.logger.Infof(ctx, "redis: Del: key %s", key)
 	err := node.client.Del(ctx, key).Err()
@@ -443,7 +445,7 @@ func (g *Group) Del(ctx context.Context, key string) error {
 func (g *Group) ZAdd(ctx context.Context, key string, values ...*redis.Z) error {
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
 	g.logger.Infof(ctx, "redis: ZAdd: key %s", key)
 	err := node.client.ZAdd(ctx, key, values...).Err()
@@ -500,7 +502,7 @@ func (g *Group) ZRangeByScoreWithScores(ctx context.Context, key string, opt *re
 func (g *Group) ZIncrBy(ctx context.Context, key string, increment float64, member string) error {
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
 	g.logger.Infof(ctx, "redis: ZIncrBy: key %s increment %v member %s", key, increment, member)
 	_, err := node.client.ZIncrBy(ctx, key, increment, member).Result()
@@ -584,7 +586,7 @@ func (g *Group) ZCard(ctx context.Context, key string) (int64, error) {
 func (g *Group) SAdd(ctx context.Context, key string, values ...interface{}) error {
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
 	g.logger.Infof(ctx, "redis: SAdd: key %s", key)
 	err := node.client.SAdd(ctx, key, values...).Err()
@@ -696,7 +698,7 @@ func (g *Group) DecrBy(ctx context.Context, key string, decr int64) (int64, erro
 func (g *Group) HSet(ctx context.Context, key, field string, val interface{}) error {
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
 	g.logger.Infof(ctx, "redis: HSet: key %s field %s", key, field)
 	err := node.client.HSet(ctx, key, field, val).Err()
@@ -711,7 +713,7 @@ func (g *Group) HSet(ctx context.Context, key, field string, val interface{}) er
 func (g *Group) HMSet(ctx context.Context, key string, fields map[string]interface{}) error {
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
 	g.logger.Infof(ctx, "redis: HMSet: key %s fields %v", key, fields)
 	err := node.client.HMSet(ctx, key, fields).Err()
@@ -742,7 +744,7 @@ func (g *Group) HGet(ctx context.Context, key, subKey string) (string, error) {
 func (g *Group) HGetJson(ctx context.Context, key, subKey string, j interface{}) error {
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
 	g.logger.Infof(ctx, "redis: HGetJson: key %s subKey %+v", key, subKey)
 	val, err := node.client.HGet(ctx, key, subKey).Result()
@@ -763,7 +765,7 @@ func (g *Group) HGetJson(ctx context.Context, key, subKey string, j interface{})
 func (g *Group) Expire(ctx context.Context, key string, expiration time.Duration) error {
 	node := g.FindNodeForKey(key)
 	if node == nil {
-		return errors.New("not found available redis node")
+		return notFoundNodeErr
 	}
 	g.logger.Infof(ctx, "redis: Expire: key %s exp %+v", key, expiration)
 	_, err := node.client.Expire(ctx, key, expiration).Result()
